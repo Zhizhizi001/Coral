@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-4v4$)a0ud3vz-%v*b9z5ccc%d@62e=1bv8+0@1s4)hk9p2$0re
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -83,10 +83,10 @@ WSGI_APPLICATION = 'CDVS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'SouthSeaData',
-        'USER': 'root',
-        'PASSWORD': 'mysql20031128',
-        'HOST': '127.0.0.1',
+        'NAME': 'if0_38718728_southseadata',
+        'USER': 'if0_38718728',
+        'PASSWORD': 'WpoY3mO50xBy',
+        'HOST': 'sql109.infinityfree.com',
         'POST': 3306
     }
 }
@@ -128,6 +128,10 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',  # 开发环境中静态文件目录
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # 生产环境中静态文件目录
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 SIMPLEUI_HOME_INFO = False
 SIMPLEUI_DEFAULT_ICON = False
