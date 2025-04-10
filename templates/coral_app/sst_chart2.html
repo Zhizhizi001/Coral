@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SST变化趋势</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script> <!-- 引入ECharts库 -->
+     <style>
+        body {
+            background-color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+
+    </style>
+</head>
+<body>
+    <!-- 筛选框 -->
+    <div>
+        <label for="filter-location">地点名称：</label>
+        <select id="filter-location"> <!-- 地点选择 -->
+            <option value="">请选择地点</option>
+            {% for location in locations %}
+                <option value="{{ location.region }}">{{ location.region }} - {{ location.sub_region }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="filter-year">年份：</label>
+        <input type="text" id="filter-year" placeholder="输入年份"> <!-- 手动输入年份 -->
+
+        <!-- 确定按钮 -->
+        <button onclick="fetchData()">确定</button>
+    </div>
+
+    <!-- 图表容器 -->
+    <div id="sst-chart" style="width: 100%; height: 500px; margin-top: 20px;"></div>
+
+    <script>
+        // 初始化ECharts图表
+        var chart = echarts.init(document.getElementById('sst-chart'));
+
+        // 配置折线图的初始状态
+        var option = {
+            title: {
+                text: '某年份SST变化趋势',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['当前SST'],
+                top: 'bottom'
+            },
+            xAxis: {
+                type: 'category',
+                data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+            },
+            yAxis: {
+                type: 'value',
+                name: 'SST (°C)'
+            },
+            series: [
+                {
+                    name: '当前SST',
+                    type: 'line',
+                    data: [] // 初始数据为空
+                }
+            ]
+        };
+
+        chart.setOption(option); // 设置图表的初始配置
+
+        // 数据筛选并加载图表
+        function fetchData() {
+            const location = document.getElementById('filter-location').value; // 获取地点
+            const year = document.getElementById('filter-year').value; // 获取年份
+
+            if (!location || !year) {
+                alert('请填写完整的地点和年份！');
+                return;
+            }
+
+            // 发送AJAX请求获取筛选后的数据
+             fetch(`{% url 'coral_app:sst_data_filtered' %}?filter_location=${location}&filter_year=${year}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 检查后端返回的数据
+                    console.log('后端数据:', data);
+
+                    // 更新折线图数据
+                    chart.setOption({
+                        title: {
+                            text: `${year}年 ${location} SST变化趋势`
+                        },
+                        // 更新 series 数据绑定
+                        series: [
+                            {
+                                name: '当前SST',
+                                data: data.current_sst.map(sst => sst ? parseFloat(sst).toFixed(2) : null)
+                            }
+                        ]
+                    });
+                })
+                .catch(error => console.error('数据加载失败:', error)); // 错误处理
+        }
+    </script>
+</body>
+</html>

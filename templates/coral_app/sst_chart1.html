@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SST动态变化趋势</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.0.2/dist/echarts.min.js"></script>
+    <style>
+        /* 样式保持不变 */
+        body { background-color: white; margin: 0; padding: 20px; }
+        #sst_chart { 
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="sst_chart" style="width: 100%; height: 600px;"></div>
+
+    <script type="text/javascript">
+        function generateSstChart(data) {
+            // 预处理：为每个数据项添加时间戳（关键修改1）
+            data.forEach(item => {
+                item.timestamp = new Date(item.Date).getTime(); // 将日期字符串转为时间戳
+            });
+
+            const locationNames = [];
+            const datasetWithFilters = [];
+            const seriesList = [];
+
+            // 提取所有地点名称（保持不变）
+            data.forEach(item => {
+                if (!locationNames.includes(item.Location)) {
+                    locationNames.push(item.Location);
+                }
+            });
+
+            // 计算SST范围（保持不变）
+            const sstValues = data.map(item => item.sst);
+            const minSST = Math.floor(Math.min(...sstValues));
+            const maxSST = Math.ceil(Math.max(...sstValues));
+
+            // 创建过滤数据集（关键修改2：使用日期过滤）
+            locationNames.forEach(location => {
+                const datasetId = `dataset_${location}`;
+                datasetWithFilters.push({
+                    id: datasetId,
+                    fromDatasetId: 'dataset_raw',
+                    transform: {
+                        type: 'filter',
+                        config: {
+                            and: [
+                                // 使用日期过滤代替年份过滤
+                                { dimension: 'Date', parser: 'time', gte: '1970-01-01' }, 
+                                { dimension: 'Location', '=': location }
+                            ]
+                        }
+                    }
+                });
+
+                // 创建系列配置（关键修改3：使用时间戳编码）
+                seriesList.push({
+                    type: 'line',
+                    datasetId: datasetId,
+                    showSymbol: false,
+                    name: location,
+                    endLabel: {
+                        show: true,
+                        formatter: params => `${params.data.Location}: ${params.data.sst.toFixed(4)}`
+                    },
+                    labelLayout: { moveOverlap: 'shiftY' },
+                    emphasis: { focus: 'series' },
+                    encode: {
+                        x: 'timestamp',  // 使用预处理的时间戳字段
+                        y: 'sst',
+                        label: ['Location', 'sst'],
+                        itemName: 'Date',  // 显示完整日期
+                        tooltip: ['sst']
+                    }
+                });
+            });
+
+            // 图表配置（关键修改4：时间轴配置）
+            var option = {
+                title: { text: 'SST数据动态变化趋势' },
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: params => {
+                        return params.map(p => {
+                            const date = new Date(p.data.timestamp);
+                            return `<span style="display:inline-block;margin-right:5px;border-radius:50%;width:8px;height:8px;background-color:${p.color};"></span>`
+                                 + `${echarts.format.formatTime('yyyy-MM-dd', date)}<br>`
+                                 + `${p.seriesName}: ${p.data.sst.toFixed(4)}`
+                        }).join('<br>');
+                    }
+                },
+                xAxis: {
+                    type: 'time',  // 改为时间轴类型
+                    name: '日期',
+                    axisLabel: {
+                        formatter: value => echarts.format.formatTime('yyyy-MM', value) // 按月显示
+                    },
+                    splitLine: { show: true }  // 显示网格线
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'SST (°C)',
+                    min: minSST+0.5,
+                    max: maxSST-0.5,
+                    interval: 0.5,
+                    axisLabel: { formatter: value => value.toFixed(1) }
+                },
+                dataset: [{
+                    id: 'dataset_raw',
+                    source: data  // 使用预处理后的数据
+                }, ...datasetWithFilters],
+                grid: { right: 140 },
+                series: seriesList,
+                dataZoom: [{   // 添加数据缩放组件（新增功能）
+                    type: 'inside',
+                    start: 30,
+                    end: 70
+                }]
+            };
+
+            // 初始化图表
+            var myChart = echarts.init(document.getElementById('sst_chart'));
+            myChart.setOption(option);
+            
+            // 窗口大小变化时自适应
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+        // 数据请求（保持不变）
+        fetch("{% url 'coral_app:sst_data' %}")
+            .then(response => response.ok ? response.json() : Promise.reject())
+            .then(data => {
+                console.log("数据加载成功:", data);
+                generateSstChart(data);
+            })
+            .catch(error => {
+                console.error("数据加载失败:", error);
+                document.getElementById('sst_chart').innerHTML = `<p style="color:red">数据加载失败，请刷新重试</p>`;
+            });
+    </script>
+</body>
+</html>

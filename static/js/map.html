@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>南海区域可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.0.2/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.8/dist/echarts-gl.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #main {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="main"></div>
+
+    <script>
+        var chartDom = document.getElementById('main');
+        var myChart = echarts.init(chartDom);
+
+        var option = {
+            title: {
+                text: '南海区域可视化',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: '{b}'
+            },
+            geo: {
+                map: 'world',
+                roam: true,
+                zoom: 2.0,
+                center: [115, 15],  // 定位南海区域的中心坐标
+                itemStyle: {
+                    areaColor: '#74add1',
+                    borderColor: '#111'
+                },
+                emphasis: {
+                    itemStyle: {
+                        areaColor: '#ff9933'
+                    }
+                }
+            }
+        };
+
+        myChart.setOption(option);
+    </script>
+</body>
+</html>

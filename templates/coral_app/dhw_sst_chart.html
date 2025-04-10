@@ -1,0 +1,208 @@
+<!-- dhw_sst_chart.html -->
+{% load static %}
+
+{% block content %}
+<div class="analysis-container">
+    <!-- 筛选控件 -->
+    <div class="filter-box">
+        <label for="locationSelect">选择区域：</label>
+        <select id="locationSelect">
+            <option value="">所有区域</option>
+            {% for loc in locations %}
+            <option value="{{ loc.location_id }}">{{ loc.region }} - {{ loc.sub_region }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="startDate">起始日期：</label>
+        <input type="date" id="startDate" min="2000-01-01" max="2023-12-31">
+
+        <label for="endDate">结束日期：</label>
+        <input type="date" id="endDate" min="2000-01-01" max="2023-12-31">
+
+        <button onclick="loadData()">加载数据</button>
+    </div>
+
+    <!-- 图表容器 -->
+    <div class="chart-row">
+        <div id="timeSeriesChart" class="chart-container"></div>
+    </div>
+
+    <!-- 错误提示 -->
+    <div id="error-message" class="error-alert" style="display: none;"></div>
+</div>
+
+<!-- 引入 ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+
+<script>
+// 全局图表实例
+let timeSeriesChart, scatterChart;
+
+// 初始化图表
+function initCharts() {
+    timeSeriesChart = echarts.init(document.getElementById('timeSeriesChart'));
+}
+
+// 加载数据
+function loadData() {
+    const baseUrl = "{% url 'coral_app:dhw_sst_data' %}";
+    const params = new URLSearchParams({
+        location_id: document.getElementById('locationSelect').value,
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value
+    });
+
+    fetch(`${baseUrl}?${params}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            console.log("后端返回的数据:", data); // 调试信息
+
+            // 检查数据是否为数组
+            if (!Array.isArray(data)) {
+                throw new Error("返回的数据格式不正确，预期是一个数组");
+            }
+
+            // 检查是否为空数据
+            if (data.length === 0) {
+                showError("没有找到符合条件的数据");
+                return;
+            }
+
+            // 渲染图表
+            renderTimeSeries(data);
+            hideError();
+        })
+        .catch(error => {
+            console.error('请求失败:', error);
+            showError(error.message);
+        });
+}
+
+//DHW与SST时间序列分析
+//DHW与SST时间序列分析
+function renderTimeSeries(data) {
+    const option = {
+        title: { text: 'DHW与SST时间序列分析' },
+        tooltip: {
+            trigger: 'axis',
+            formatter: params => {
+                const date = params[0].data.date;
+                return `${date}<br>${params.map(p => 
+                    // 修复点：直接使用 p.data.sst 和 p.data.dhw
+                    `${p.seriesName}: ${p.seriesName === '海表温度' ? p.data.sst : p.data.dhw}`
+                ).join('<br>')}`;
+            }
+        },
+        xAxis: {
+            type: 'time',
+            name: '日期'
+        },
+        yAxis: [{
+            type: 'value',
+            name: 'SST (°C)',
+            min: 0
+        }, {
+            type: 'value',
+            name: 'DHW',
+            min: 0
+        }],
+        dataset: { source: data.map(d => ({
+            date: d.date,
+            sst: d.sst || 0,  // 确保 sst 为 0 而不是 undefined
+            dhw: d.dhw || 0   // 确保 dhw 为 0 而不是 undefined
+        })) },
+        series: [
+            {
+                name: 'SST',
+                type: 'line',
+                encode: { x: 'date', y: 'sst' },
+                yAxisIndex: 0,
+                smooth: true
+            },
+            {
+                name: 'DHW',
+                type: 'line',
+                encode: { x: 'date', y: 'dhw' },
+                yAxisIndex: 1,
+                smooth: true
+            }
+        ],
+        dataZoom: [{ type: 'inside' }]
+    };
+    timeSeriesChart.setOption(option);
+}
+// 显示错误提示
+function showError(message) {
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.textContent = `错误: ${message}`;
+    errorDiv.style.display = 'block';
+}
+
+// 隐藏错误提示
+function hideError() {
+    document.getElementById('error-message').style.display = 'none';
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    loadData(); // 默认加载数据
+    window.addEventListener('resize', () => {
+        timeSeriesChart.resize();
+        scatterChart.resize();
+    });
+});
+</script>
+
+<style>
+/* 样式部分 */
+.analysis-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.filter-box {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f5f7fa;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-box label {
+    font-weight: bold;
+}
+
+.chart-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.chart-container {
+    height: 500px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+
+.error-alert {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 25px;
+    background: #ff4444;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+</style>
+{% endblock %}

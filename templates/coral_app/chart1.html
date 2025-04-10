@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SST Records</title>
+    <!-- 引入 ECharts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.3.2/echarts.min.js"></script>
+</head>
+<body>
+    <h2>Sea Surface Temperature (SST) Records</h2>
+    <div id="chart" style="width: 100%; height: 600px;"></div>
+
+    <script type="text/javascript">
+    // 获取数据并渲染图表
+    fetch('/marine_data/')
+        .then(response => response.json())
+        .then(data => {
+            let records = data.records;
+            let locationIds = [...new Set(records.map(record => record.location_id))];
+
+            let datasetWithFilters = [];
+            let seriesList = [];
+
+            // 为每个地点创建数据集和系列
+            locationIds.forEach(locationId => {
+                let datasetId = 'dataset_' + locationId;
+                datasetWithFilters.push({
+                    id: datasetId,
+                    fromDatasetId: 'dataset_raw',
+                    transform: {
+                        type: 'filter',
+                        config: {
+                            and: [
+                                { dimension: 'location_id', '=': locationId }
+                            ]
+                        }
+                    }
+                });
+
+                seriesList.push({
+                    type: 'line',
+                    datasetId: datasetId,
+                    showSymbol: false,
+                    name: `Location ${locationId}`,
+                    labelLayout: {
+                        moveOverlap: 'shiftY'
+                    },
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    encode: {
+                        x: 'time',
+                        y: 'sst',
+                        label: ['location_id', 'sst'],
+                        itemName: 'time',
+                        tooltip: ['sst']
+                    }
+                });
+            });
+
+            // 配置图表选项
+            let option = {
+                animationDuration: 10000,
+                dataset: [
+                    {
+                        id: 'dataset_raw',
+                        source: records
+                    },
+                    ...datasetWithFilters
+                ],
+                title: {
+                    text: 'SST Records by Location'
+                },
+                tooltip: {
+                    order: 'valueDesc',
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    nameLocation: 'middle'
+                },
+                yAxis: {
+                    name: 'Sea Surface Temperature (SST)'
+                },
+                grid: {
+                    right: 140
+                },
+                series: seriesList
+            };
+
+            // 初始化并渲染图表
+            let chartDom = document.getElementById('chart');
+            let myChart = echarts.init(chartDom);
+            myChart.setOption(option);
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+        });
+    </script>
+</body>
+</html>

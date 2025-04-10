@@ -1,0 +1,248 @@
+{#{% extends "base.html" %}#}
+{% load static %}
+
+{% block content %}
+<div class="yolo-container">
+    {% csrf_token %}
+    <div class="control-panel">
+        <div class="model-section">
+            <h3>模型选择</h3>
+            <select id="modelSelect" class="form-control">
+                {% for model in pt_list %}
+                    <option value="{{ model }}">{{ model }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="param-section">
+            <h3>检测参数</h3>
+            <div class="param-item">
+                <label>置信度阈值:</label>
+                <input type="range" id="confSlider" min="0" max="100" value="33">
+                <span id="confValue">0.33</span>
+            </div>
+            <div class="param-item">
+                <label>IOU阈值:</label>
+                <input type="range" id="iouSlider" min="0" max="100" value="26">
+                <span id="iouValue">0.26</span>
+            </div>
+        </div>
+
+        <div class="source-section">
+            <h3>输入源</h3>
+            <button id="fileButton" class="btn btn-primary">选择文件</button>
+            <input type="file" id="fileInput" style="display: none" accept="image/*">
+            <p>置信度:置信度是 YOLO 模型对预测框内存在目标对象的信心程度以及预测框对目标对象位置的准确性的量化表示。主要用于推理阶段，通过过滤低置信度的预测框来提高检测结果的准确性。</p>
+            <p>IOU阈值:用于衡量预测框与真实框重叠度的标准。IOU是预测框与真实框的交集面积与并集面积的比值，取值范围为 [0, 1]，值越高表示预测框与真实框的重叠程度越高。</p>
+
+        </div>
+    </div>
+
+    <div class="display-panel">
+        <div class="canvas-container">
+            <canvas id="displayCanvas"></canvas>
+        </div>
+        <div class="result-panel">
+            <h3>检测结果</h3>
+            <div id="resultList"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.yolo-container {
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+}
+
+.control-panel {
+    width: 300px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.display-panel {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.canvas-container {
+    width: 100%;
+    min-height: 400px;
+    margin-bottom: 20px;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#displayCanvas {
+    max-width: 100%;
+    max-height: 600px;
+}
+
+.result-panel {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.param-item {
+    margin: 10px 0;
+}
+
+.btn {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    border-radius: 5px;
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #45a049;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    const fileButton = document.getElementById('fileButton');
+    const canvas = document.getElementById('displayCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 设置初始canvas大小
+    canvas.width = 640;
+    canvas.height = 480;
+    
+    // 绘制初始背景
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#666';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('请选择图片进行检测', canvas.width/2, canvas.height/2);
+
+    fileButton.onclick = () => fileInput.click();
+    
+    fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('conf_thres', document.getElementById('confValue').textContent);
+                formData.append('iou_thres', document.getElementById('iouValue').textContent);
+                formData.append('model', document.getElementById('modelSelect').value);
+                
+                // 显示加载状态
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.fillText('正在处理图片...', canvas.width/2, canvas.height/2);
+                
+                const response = await fetch('{% url "coral_app:process_detection" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    updateDisplay(result);
+                } else {
+                    throw new Error(result.message || '检测失败');
+                }
+                
+            } catch (error) {
+                console.error('检测出错:', error);
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ff0000';
+                ctx.fillText(`检测失败: ${error.message}`, canvas.width/2, canvas.height/2);
+            }
+        }
+    };
+    
+    // 参数滑块事件处理
+    const confSlider = document.getElementById('confSlider');
+    const confValue = document.getElementById('confValue');
+    confSlider.oninput = function() {
+        confValue.textContent = (this.value / 100).toFixed(2);
+    };
+    
+    const iouSlider = document.getElementById('iouSlider');
+    const iouValue = document.getElementById('iouValue');
+    iouSlider.oninput = function() {
+        iouValue.textContent = (this.value / 100).toFixed(2);
+    };
+});
+
+function updateDisplay(result) {
+    const canvas = document.getElementById('displayCanvas');
+    const ctx = canvas.getContext('2d');
+    const resultList = document.getElementById('resultList');
+    
+    // 清空结果列表
+    resultList.innerHTML = '';
+    
+    // 创建新图片对象
+    const img = new Image();
+    img.onload = function() {
+        // 调整canvas大小以适应图片
+        const maxWidth = canvas.parentElement.clientWidth;
+        const scale = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * scale;
+        
+        // 绘制图片
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // 显示检测结果统计
+        const statistics = {};
+        result.results.forEach(det => {
+            statistics[det.name] = (statistics[det.name] || 0) + 1;
+        });
+        
+        // 创建统计摘要
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'detection-summary';
+        summaryDiv.innerHTML = '<h4>检测统计</h4>';
+        for (const [className, count] of Object.entries(statistics)) {
+            summaryDiv.innerHTML += `<div>${className}: ${count}个</div>`;
+        }
+        resultList.appendChild(summaryDiv);
+        
+        // 显示详细结果
+        result.results.forEach((det, index) => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'detection-item';
+            resultItem.innerHTML = `
+                <div class="detection-header">
+                    检测 #${index + 1}: ${det.name}
+                </div>
+                <div class="detection-details">
+                    置信度: ${(det.confidence * 100).toFixed(1)}%
+                </div>
+            `;
+            resultList.appendChild(resultItem);
+        });
+    };
+    
+    img.src = result.image;
+}
+</script>
+{% endblock %}

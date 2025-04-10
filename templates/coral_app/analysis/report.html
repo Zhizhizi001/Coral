@@ -1,0 +1,158 @@
+{% load static %}
+
+{% block title %}珊瑚健康分析报告{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="text-center my-4">
+                <h1>珊瑚健康分析报告</h1>
+                <p class="text-muted">生成时间: {% now "Y-m-d H:i" %}</p>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>分析摘要</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    分析区域
+                                    <span class="badge badge-primary badge-pill">{{ params.region }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    时间范围
+                                    <span class="badge badge-info badge-pill">{{ params.start_date }} 至 {{ params.end_date }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    数据量
+                                    <span class="badge badge-success badge-pill">{{ metrics.data_count }} 条记录</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-{{ risk_level_class }}" role="alert">
+                                <h4 class="alert-heading">风险等级: {{ risk_assessment.level }}</h4>
+                                <p>{{ risk_assessment.recommendation }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>温度指标</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>平均温度</h6>
+                                    <h2 class="text-primary">{{ metrics.avg_sst|floatformat:2 }}°C</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>最高温度</h6>
+                                    <h2 class="text-danger">{{ metrics.max_sst|floatformat:2 }}°C</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>最低温度</h6>
+                                    <h2 class="text-info">{{ metrics.min_sst|floatformat:2 }}°C</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>热压力分析</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>最大热压力</h6>
+                                    <h2 class="text-warning">{{ metrics.max_dhw|floatformat:2 }}°C-周</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6>热点天数</h6>
+                                    <h2 class="text-secondary">{{ metrics.hotspot_days }} 天</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>详细图表</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div id="report-sst-chart" style="height: 350px;"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="report-dhw-chart" style="height: 350px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>风险因素</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for factor in risk_assessment.factors %}
+                            <li class="list-group-item">{{ factor }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4>建议措施</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        {{ risk_assessment.recommendation }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/echarts.min.js' %}"></script>
+<script>
+    $(document).ready(function() {
+        // 初始化报告图表
+        initReportCharts();
+    });
+</script>
+{% endblock %}

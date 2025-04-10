@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>范围导出</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #3f51b5;
+        }
+        a {
+            color: #3f51b5;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        form {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        label {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.9em;
+            color: #666;
+        }
+        input[type="number"] {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 150px;
+        }
+        button {
+            background-color: #3f51b5;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        button:hover {
+            background-color: #283593;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #3f51b5;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .export-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: white;
+            background-color: #4caf50;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .export-link:hover {
+            background-color: #388e3c;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .step-links a {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .step-links a:hover {
+            background-color: #e0e0e0;
+        }
+        .current {
+            display: inline-block;
+            padding: 5px 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- 选择数据表的链接 -->
+    <h1>选择数据表</h1>
+    <a href="?table=locations">Locations</a> |
+    <a href="?table=marine_data">Marine Data</a>
+
+    <!-- 根据选择的数据表显示相应的筛选表单和数据表格 -->
+    {% if table == "locations" %}
+        <h2>Locations 数据表</h2>
+        <!-- 筛选表单 -->
+        <form method="get" action=".">
+            <input type="hidden" name="table" value="locations">
+            <div class="form-group">
+                <label>最小纬度: <input type="number" step="any" name="min_lat" value="{{ min_lat }}"></label>
+                <label>最大纬度: <input type="number" step="any" name="max_lat" value="{{ max_lat }}"></label>
+            </div>
+            <div class="form-group">
+                <label>最小经度: <input type="number" step="any" name="min_lon" value="{{ min_lon }}"></label>
+                <label>最大经度: <input type="number" step="any" name="max_lon" value="{{ max_lon }}"></label>
+            </div>
+            <button type="submit">筛选</button>
+        </form>
+        <!-- 导出链接 -->
+        <a class="export-link" href="?table=locations&export=1&min_lat={{ min_lat }}&max_lat={{ max_lat }}&min_lon={{ min_lon }}&max_lon={{ max_lon }}">导出为 Excel</a>
+
+        <!-- 如果应用了筛选条件，显示筛选结果标题 -->
+        {% if filter_applied %}
+            <h3>筛选结果:</h3>
+        {% endif %}
+
+        <!-- Locations 数据表的内容 -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Location ID</th>
+                    <th>Region</th>
+                    <th>Sub-Region</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for location in locations %}
+                    <tr>
+                        <td>{{ location.location_id }}</td>
+                        <td>{{ location.region }}</td>
+                        <td>{{ location.sub_region }}</td>
+                        <td>{{ location.lat }}</td>
+                        <td>{{ location.lon }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">没有找到符合条件的记录。</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- 分页导航 -->
+        <div class="pagination">
+            <span class="step-links">
+                {% if locations.has_previous %}
+                    <a href="?table=locations&page=1">首页</a>
+                    <a href="?table=locations&page={{ locations.previous_page_number }}">上一页</a>
+                {% endif %}
+
+                <span class="current">
+                    第 {{ locations.number }} 页，共 {{ locations.paginator.num_pages }} 页。
+                </span>
+
+                {% if locations.has_next %}
+                    <a href="?table=locations&page={{ locations.next_page_number }}">下一页</a>
+                    <a href="?table=locations&page={{ locations.paginator.num_pages }}">末页</a>
+                {% endif %}
+            </span>
+        </div>
+
+    {% elif table == "marine_data" %}
+        <h2>Marine Data 数据表</h2>
+        <!-- 筛选表单 -->
+        <form method="get" action=".">
+            <input type="hidden" name="table" value="marine_data">
+            <div class="form-group">
+                <label>最小纬度: <input type="number" step="any" name="min_lat" value="{{ min_lat }}"></label>
+                <label>最大纬度: <input type="number" step="any" name="max_lat" value="{{ max_lat }}"></label>
+            </div>
+            <div class="form-group">
+                <label>最小经度: <input type="number" step="any" name="min_lon" value="{{ min_lon }}"></label>
+                <label>最大经度: <input type="number" step="any" name="max_lon" value="{{ max_lon }}"></label>
+            </div>
+            <div class="form-group">
+                <label>最小 SST: <input type="number" step="any" name="min_sst" value="{{ min_sst }}"></label>
+                <label>最大 SST: <input type="number" step="any" name="max_sst" value="{{ max_sst }}"></label>
+            </div>
+            <button type="submit">筛选</button>
+        </form>
+        <!-- 导出链接 -->
+        <a class="export-link" href="?table=marine_data&export=1&min_lat={{ min_lat }}&max_lat={{ max_lat }}&min_lon={{ min_lon }}&max_lon={{ max_lon }}&min_sst={{ min_sst }}&max_sst={{ max_sst }}">导出为 Excel</a>
+
+        <!-- 如果应用了筛选条件，显示筛选结果标题 -->
+        {% if filter_applied %}
+            <h3>筛选结果:</h3>
+        {% endif %}
+
+        <!-- Marine Data 数据表的内容 -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Data ID</th>
+                    <th>Location ID</th>
+                    <th>Date</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Sea Surface Temperature</th>
+                    <th>Hotspot Value</th>
+                    <th>Degree Heating Week</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in marine_data %}
+                    <tr>
+                        <td>{{ record.data_id }}</td>
+                        <td>{{ record.location_id.location_id }}</td>
+                        <td>{{ record.date }}</td>
+                        <td>{{ record.location_id.lat }}</td>
+                        <td>{{ record.location_id.lon }}</td>
+                        <td>{{ record.sea_surface_temperature }}</td>
+                        <td>{{ record.hotspot_value }}</td>
+                        <td>{{ record.degree_heating_week }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8">没有找到符合条件的记录。</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- 分页导航 -->
+        <div class="pagination">
+            <span class="step-links">
+                {% if marine_data.has_previous %}
+                    <a href="?table=marine_data&page=1">首页</a>
+                    <a href="?table=marine_data&page={{ marine_data.previous_page_number }}">上一页</a>
+                {% endif %}
+
+                <span class="current">
+                    第 {{ marine_data.number }} 页，共 {{ marine_data.paginator.num_pages }} 页。
+                </span>
+
+                {% if marine_data.has_next %}
+                    <a href="?table=marine_data&page={{ marine_data.next_page_number }}">下一页</a>
+                    <a href="?table=marine_data&page={{ marine_data.paginator.num_pages }}">末页</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+</body>
+</html>

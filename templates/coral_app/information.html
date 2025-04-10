@@ -1,0 +1,212 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>珊瑚介绍</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM6fI6Q7j8N/Z5HgSFyyNCqUI2Gr71zpeHI57rS" crossorigin="anonymous">
+    <style>
+        /* Reset and Basic Setup */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f9;
+        }
+
+        /* Header and Navigation */
+        header {
+            background-color: #006994;
+            color: #fff;
+            padding: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 5%;
+        }
+
+        header .logo h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        header nav ul {
+            list-style: none;
+            display: flex;
+        }
+
+        header nav ul li {
+            margin-left: 20px;
+        }
+
+        header nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        header nav ul li a:hover {
+            background-color: #004766;
+        }
+
+        /* Main Content Area */
+        .content {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        /* Section Styling */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #006994;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .section p {
+            margin-bottom: 20px;
+            text-align: justify;
+            font-size: 16px;
+        }
+
+        .section img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #006994;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+
+        footer p {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        footer .social-media {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        footer .social-media a {
+            color: #fff;
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+
+        footer .social-media a:hover {
+            color: #cccccc;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <div class="logo">
+            <h1>珊瑚保护与研究</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#knowledge">珊瑚知识科普</a></li>
+                <li><a href="#importance">珊瑚的重要性</a></li>
+                <li><a href="#environment">珊瑚的生存环境</a></li>
+                <li><a href="#challenges">面临的挑战</a></li>
+                <li><a href="#monitoring">监测与保护</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content Section -->
+    <div class="content">
+        <!-- Section 1: 珊瑚礁知识科普 -->
+        <div class="section" id="knowledge">
+            <h2>珊瑚礁知识科普</h2>
+            <img src="{% static 'images/img1.jpg' %}" alt="珊瑚礁类型">
+            <p>珊瑚并不是植物，而是由无数微小的珊瑚虫和共生的虫黄藻组成的动物。珊瑚虫通过吸收海水中的钙和二氧化碳，分泌出石灰石，逐渐形成五彩斑斓的珊瑚骨骼。这些骨骼堆积起来，经过数百甚至数千年的时间，最终形成巨大的珊瑚礁。</p>
+            <p>造礁珊瑚：只有一部分珊瑚能够形成珊瑚礁，称为造礁珊瑚。</p>
+            <p>珊瑚礁类型：珊瑚礁主要分为岸礁、堡礁和环礁三种类型</p>
+            <p>SST（Sea Surface Temperature，海表温度）:海表温度变量，记录每个时间点和经纬度位置的海表温度值。</p>
+            <p>DHW（Degree Heating Week，热量周数）:热应力指数，记录每个时间点和经纬度位置的热量周数值。</p>
+            <p>HS（Hotspot，热点温度）:用于识别海洋中的异常高温区域，对珊瑚礁的健康状况监测至关重要。</p>
+        </div>
+
+        <!-- Section 2: 珊瑚礁的重要性 -->
+        <div class="section" id="importance">
+            <h2>珊瑚的重要性</h2>
+            <p>珊瑚礁生态系统是地球上最具生物多样性的生态系统之一。它们为超过4000种鱼类、800种硬珊瑚以及83万种多细胞动植物提供栖息地。此外，珊瑚礁为人类社会提供了丰富的资源，包括渔业资源、药用资源以及旅游资源。</p>
+            <p>珊瑚礁的生态系统服务价值巨大。它们能够有效吸收和存储碳，在全球碳循环中起着至关重要的作用。珊瑚礁每年为全球经济贡献数十亿美元，尤其是在海岸保护和减轻洪水灾害方面具有重要价值。</p>
+        </div>
+
+        <!-- Section 3: 珊瑚的生存环境 -->
+        <div class="section" id="environment">
+            <h2>珊瑚的生存环境</h2>
+            <p>珊瑚对生存环境的要求非常高，水温、水深、水质、盐度等因素都会影响它们的生长。</p>
+            <p>水温：珊瑚礁通常生长在南北纬30°之间的温暖海域。</p>
+            <p>水深：珊瑚需要阳光，因此大多生长在浅水区域（水深30米以内）。</p>
+            <p>水质：珊瑚对水质极为敏感，浑浊的水体或污染物会导致珊瑚虫死亡。</p>
+        </div>
+
+        <!-- Section 4: 珊瑚礁面临的挑战 -->
+        <div class="section" id="challenges">
+            <h2>珊瑚面临的挑战</h2>
+            <img src="{% static 'images/p0.png' %}" alt="珊瑚白化现象">
+            <p>近年来，由于全球气候变化和人类活动的双重作用，珊瑚正面临前所未有的挑战。温度升高、极端气候事件的频繁发生以及海洋酸化等问题导致珊瑚白化和死亡现象加剧。尤其是南海地区的珊瑚礁生态系统，受到了严重的影响。</p>
+            <p>根据预测，在全球气温上升1.5°C时，全球约有70-90%的珊瑚将面临白化和退化风险。温度上升2°C时，这一比例甚至将上升至99%。自上世纪80年代以来，全球约50%的珊瑚已经遭到破坏或消失。</p>
+            <div style="text-align: center;">
+                <img src="{% static 'images/img.png' %}" alt="珊瑚白化与珊瑚死亡" style="width: 50%; height: auto;">
+            </div>
+            <p>厄尔尼诺现象：珊瑚中的珊瑚虫和虫黄藻是共生关系，但是后者需要有合适的水温，当海洋水温升高后，虫黄藻无法生存就会离开珊瑚虫，而因为珊瑚呈现出来的颜色是虫黄藻提供的，这时候珊瑚就会变成全白色，这叫做珊瑚白化，很多人会觉得这个颜色也很好看，但这时珊瑚虫已经极度危险，不久之后珊瑚虫就会缺乏营养集体死亡，随后各种藻类覆盖珊瑚枝丫，形成下面的珊瑚坟场。</p>
+        </div>
+
+        <!-- Section 5: 珊瑚礁监测与保护 -->
+        <div class="section" id="monitoring">
+            <h2>珊瑚监测与保护</h2>
+            <img src="{% static 'images/p1.jpg' %}" alt="珊瑚监测技术">
+            <p>为了有效保护珊瑚，现代技术的应用至关重要。遥感技术的应用可以帮助科学家实时监测珊瑚的健康状况，尤其是在南海等珊瑚受损严重的地区。</p>
+            <p>通过珊瑚数据监测系统（如NOAA的Coral Reef Watch），我们可以获取关于珊瑚白化、发病等信息，进而采取更有针对性的保护措施。这一过程不仅能够帮助科研人员进行预警，还能提高公众的保护意识。</p>
+        </div>
+
+    </div>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>© 2025 珊瑚保护与研究项目. 版权所有</p>
+        <div class="social-media">
+            <a href="https://www.facebook.com" target="_blank"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://twitter.com" target="_blank"><i class="fab fa-twitter"></i></a>
+            <a href="https://www.instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
+        </div>
+    </footer>
+
+</body>
+</html>

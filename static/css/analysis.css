@@ -1,0 +1,45 @@
+/* 核心容器 */
+.analysis-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 20px;
+}
+
+/* 指标卡片 */
+.metric-card {
+    transition: transform 0.3s ease;
+    border: none;
+    border-radius: 15px;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.metric-card h5 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.metric-card h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0;
+}
+
+/* 图表容器 */
+.chart-section .card-body {
+    padding: 20px;
+    background: #f8f9fa;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .metric-card h2 {
+        font-size: 1.8rem;
+    }
+
+    .control-panel .col-md-3 {
+        margin-bottom: 15px;
+    }
+}

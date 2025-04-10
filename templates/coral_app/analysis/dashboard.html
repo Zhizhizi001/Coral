@@ -1,0 +1,327 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>珊瑚健康评估系统</title>
+
+    <!-- 核心样式 -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/all.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* 自定义样式 */
+        .chart-container {
+            height: 500px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            padding: 15px;
+        }
+
+        .metric-card {
+            transition: transform 0.3s ease;
+            min-height: 120px;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .analysis-chart-mini {
+            height: 200px;
+            margin-bottom: 1rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .risk-badge {
+            font-size: 1.25rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+
+        .report-divider {
+            border-top: 2px solid rgba(0,0,0,0.1);
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<!-- 添加Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <!-- 标题 -->
+        <h1 class="text-center mb-5 display-4">珊瑚健康评估系统</h1>
+
+        <!-- 筛选栏 -->
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>数据筛选</h5>
+            </div>
+            <div class="card-body">
+                <form id="filter-form" class="row g-3">
+                    <!-- 区域选择 -->
+                    <div class="col-md-4">
+                        <select class="form-select" name="region">
+                            <option value="all">全部区域</option>
+                            {% for region in regions %}
+                            <option value="{{ region.region }}-{{ region.sub_region }}"
+                                {% if current_params.region == region.region|add:"-"|add:region.sub_region %}selected{% endif %}>
+                                {{ region.region }} - {{ region.sub_region }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 日期范围 -->
+                    <div class="col-md-3">
+                        <input type="date" class="form-control"
+                               name="start_date"
+                               value="{{ current_params.start_date }}"
+                               min="{{ date_range.min }}"
+                               max="{{ date_range.max }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control"
+                               name="end_date"
+                               value="{{ current_params.end_date }}"
+                               min="{{ date_range.min }}"
+                               max="{{ date_range.max }}">
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-sync-alt me-2"></i>更新数据
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 关键指标 -->
+        <div class="row row-cols-1 row-cols-md-5 g-4 mb-4">
+            <!-- 最低温度 -->
+            <div class="col">
+                <div class="card metric-card bg-info text-white h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="fas fa-temperature-low"></i> 最低温度</h6>
+                        <h2 class="card-text">{{ metrics.min_sst|default:"0.00"|floatformat:2 }}°C</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最高温度 -->
+            <div class="col">
+                <div class="card metric-card bg-danger text-white h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="fas fa-temperature-high"></i> 最高温度</h6>
+                        <h2 class="card-text">{{ metrics.max_sst|default:"0.00"|floatformat:2 }}°C</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 平均温度 -->
+            <div class="col">
+                <div class="card metric-card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="fas fa-thermometer-half"></i> 平均温度</h6>
+                        <h2 class="card-text">{{ metrics.avg_sst|default:"0.00"|floatformat:2 }}°C</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热点天数 -->
+            <div class="col">
+                <div class="card metric-card bg-warning text-dark h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="fas fa-fire"></i> 热点天数</h6>
+                        <h2 class="card-text">{{ metrics.hotspot_days|default:"0" }} 天</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最大热压力 -->
+            <div class="col">
+                <div class="card metric-card bg-dark text-white h-100">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="fas fa-radiation"></i> 最大热压力</h6>
+                        <h2 class="card-text">{{ metrics.max_dhw|default:"0.00"|floatformat:2 }}°C</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主图表区 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div id="sst-chart">
+                    {{ sst_chart|safe }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div id="dhw-chart">
+                    {{ dhw_chart|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 健康分析报告 -->
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-file-medical me-2"></i>健康分析报告</h5>
+            </div>
+            <div class="card-body">
+                {% if health_analysis %}
+                <div class="alert alert-{{ risk_level_class }} mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="alert-heading mb-0">
+                            风险等级：{{ health_analysis.risk_assessment.level }}
+                        </h4>
+                        <span class="badge risk-badge bg-{{ risk_level_class }}">
+                            {{ health_analysis.risk_assessment.level }}
+                        </span>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ health_analysis.report|linebreaks }}
+                            <div class="mt-3">
+                                <h5>建议措施：</h5>
+                                {% if health_analysis.risk_assessment.action_required %}
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    立即启动珊瑚保护应急预案
+                                </div>
+                                {% else %}
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    保持常规监测
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- 预警信息卡片 -->
+                            <div class="card mb-3 border-{{ risk_level_class }}">
+                                <div class="card-header bg-{{ risk_level_class }} text-white">
+                                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>当前预警</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-{{ health_analysis.risk_assessment.icon }} fa-2x text-{{ risk_level_class }}"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h5 class="mb-1">{{ health_analysis.risk_assessment.level }}</h5>
+                                            <p class="mb-0 text-muted">{{ health_analysis.risk_assessment.description }}</p>
+                                        </div>
+                                    </div>
+                                    {% if health_analysis.risk_assessment.factors %}
+                                    <div class="alert alert-{{ risk_level_class }} mb-0">
+                                        <h6 class="mb-2">风险因素：</h6>
+                                        <ul class="mb-0">
+                                            {% for factor in health_analysis.risk_assessment.factors %}
+                                            <li>{{ factor }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- 统计概览卡片 -->
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>统计概览</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <h6 class="text-muted mb-1">温度范围</h6>
+                                                <h5 class="mb-0">{{ metrics.min_sst|default:"0.00"|floatformat:2 }} - {{ metrics.max_sst|default:"0.00"|floatformat:2 }}°C</h5>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <h6 class="text-muted mb-1">平均温度</h6>
+                                                <h5 class="mb-0">{{ metrics.avg_sst|default:"0.00"|floatformat:2 }}°C</h5>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <h6 class="text-muted mb-1">热压力峰值</h6>
+                                                <h5 class="mb-0">{{ metrics.max_dhw|default:"0.00"|floatformat:2 }}</h5>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <h6 class="text-muted mb-1">热点天数</h6>
+                                                <h5 class="mb-0">{{ metrics.hotspot_days|default:"0" }}天</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-secondary">
+                    <i class="fas fa-info-circle me-2"></i>当前筛选条件下无分析结果
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 导出控件 -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-file-export me-2"></i>报告导出</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-danger me-2" onclick="exportReport('pdf')">
+                    <i class="fas fa-file-pdf me-2"></i>导出PDF
+                </button>
+                <button class="btn btn-success" onclick="exportReport('excel')">
+                    <i class="fas fa-file-excel me-2"></i>导出Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        // 表单防抖处理
+        let debounceTimer;
+        document.getElementById('filter-form').addEventListener('change', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                document.getElementById('filter-form').submit();
+            }, 500);
+        });
+
+        // 导出处理
+        function exportReport(format) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('format', format);
+            window.open(`{% url 'coral_app:export_report' %}?${params}`, '_blank');
+        }
+
+        // 图表高度自适应
+        function adjustChartHeight() {
+            const charts = document.querySelectorAll('.chart-container');
+            charts.forEach(chart => {
+                chart.style.height = `${window.innerHeight * 0.5}px`;
+            });
+        }
+        window.addEventListener('resize', adjustChartHeight);
+        adjustChartHeight();
+    </script>
+</body>
+</html>
