@@ -83,10 +83,10 @@ WSGI_APPLICATION = 'CDVS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'if0_38718728_southseadata',
-        'USER': 'if0_38718728',
-        'PASSWORD': 'WpoY3mO50xBy',
-        'HOST': 'sql109.infinityfree.com',
+        'NAME': 'SouthSeaData',
+        'USER': 'root',
+        'PASSWORD': 'mysql20031128',
+        'HOST': '127.0.0.1',
         'POST': 3306
     }
 }
